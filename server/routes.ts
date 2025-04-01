@@ -63,8 +63,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const generatedQR = await qrCodeService.generateQRCode({
         upiId: qrCodeData.upiId,
         name: qrCodeData.name,
-        amount: qrCodeData.amount,
-        description: qrCodeData.description || undefined,
+        amount: qrCodeData.amount ? qrCodeData.amount.toString() : undefined,
+        description: qrCodeData.description || "",
         size: qrCodeData.size,
         borderStyle: qrCodeData.borderStyle
       });

@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 export interface QRCodeOptions {
   upiId: string;
   name?: string;
-  amount?: number | string;
+  amount?: string;
   description?: string;
   size?: string;
   borderStyle?: string;

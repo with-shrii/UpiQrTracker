@@ -20,14 +20,14 @@ const NavItem = ({ href, icon, title, isActive }: NavItemProps) => {
   return (
     <li>
       <Link href={href}>
-        <a className={`flex items-center px-4 py-3 ${
+        <div className={`flex items-center px-4 py-3 ${
           isActive 
             ? "text-primary bg-purple-50 border-r-4 border-primary" 
-            : "text-textColor hover:bg-purple-50 hover:text-primary"
+            : "text-gray-700 hover:bg-purple-50 hover:text-primary"
         }`}>
           <span className="mr-3">{icon}</span>
           {title}
-        </a>
+        </div>
       </Link>
     </li>
   );
