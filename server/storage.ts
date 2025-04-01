@@ -5,8 +5,14 @@ import {
   InsertStats, Stats,
   transactions
 } from "@shared/schema";
+import session from "express-session";
+import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
 export interface IStorage {
+  // Session store
+  sessionStore: session.Store;
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -40,6 +46,8 @@ export class MemStorage implements IStorage {
   private qrCodeIdCounter: number;
   private transactionIdCounter: number;
   private statsIdCounter: number;
+  
+  public sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
@@ -51,6 +59,12 @@ export class MemStorage implements IStorage {
     this.qrCodeIdCounter = 1;
     this.transactionIdCounter = 1;
     this.statsIdCounter = 1;
+    
+    // Create memory store for sessions
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
 
     // Add demo user
     this.createUser({
@@ -75,13 +89,20 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
-    const user: User = { ...insertUser, id };
+    // Ensure all fields have proper types according to schema
+    const user: User = { 
+      ...insertUser, 
+      id,
+      upiId: insertUser.upiId ?? null, 
+      email: insertUser.email ?? null,
+      fullName: insertUser.fullName ?? null
+    };
     this.users.set(id, user);
     
     // Create initial stats for the user
     await this.createOrUpdateStats({
       userId: id,
-      totalPayments: 0,
+      totalPayments: "0",
       activeQrCodes: 0,
       totalTransactions: 0,
       uniquePayers: 0
@@ -113,7 +134,16 @@ export class MemStorage implements IStorage {
   async createQrCode(insertQrCode: InsertQrCode): Promise<QrCode> {
     const id = this.qrCodeIdCounter++;
     const now = new Date();
-    const qrCode: QrCode = { ...insertQrCode, id, createdAt: now };
+    // Ensure all fields have proper types according to schema
+    const qrCode: QrCode = { 
+      ...insertQrCode, 
+      id, 
+      createdAt: now,
+      size: insertQrCode.size || "medium",
+      borderStyle: insertQrCode.borderStyle || "simple",
+      amount: insertQrCode.amount ?? null,
+      description: insertQrCode.description ?? null
+    };
     this.qrCodes.set(id, qrCode);
     
     // Update user stats
@@ -173,7 +203,16 @@ export class MemStorage implements IStorage {
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
     const id = this.transactionIdCounter++;
     const now = new Date();
-    const transaction: Transaction = { ...insertTransaction, id, timestamp: now };
+    // Ensure all fields have proper types according to schema
+    const transaction: Transaction = { 
+      ...insertTransaction, 
+      id, 
+      timestamp: now,
+      status: insertTransaction.status || "completed",
+      payerName: insertTransaction.payerName ?? null,
+      payerUpiId: insertTransaction.payerUpiId ?? null,
+      metadata: insertTransaction.metadata ?? null
+    };
     this.transactions.set(id, transaction);
     
     // Get the QR code to find the user
@@ -183,14 +222,17 @@ export class MemStorage implements IStorage {
       const userStats = await this.getStats(qrCode.userId);
       if (userStats) {
         const allTransactions = await this.getTransactionsByUserId(qrCode.userId);
-        const uniquePayerIds = new Set(allTransactions.map(t => t.payerUpiId));
+        const uniquePayerIds = new Set(allTransactions.map(t => t.payerUpiId).filter(Boolean));
+        
+        // Convert number to string for totalPayments
+        const totalPaymentsNum = Number(userStats.totalPayments) + Number(transaction.amount);
+        const totalPayments = totalPaymentsNum.toString();
         
         await this.createOrUpdateStats({
-          ...userStats,
-          totalPayments: Number(userStats.totalPayments) + Number(transaction.amount),
+          userId: userStats.userId,
+          totalPayments,
           totalTransactions: userStats.totalTransactions + 1,
-          uniquePayers: uniquePayerIds.size,
-          lastUpdated: now
+          uniquePayers: uniquePayerIds.size
         });
       }
     }
@@ -209,19 +251,31 @@ export class MemStorage implements IStorage {
     const existingStats = await this.getStats(insertStats.userId);
     
     if (existingStats) {
-      // Update existing stats
+      // Update existing stats with proper type handling
       const updatedStats: Stats = { 
-        ...existingStats, 
-        ...insertStats,
+        ...existingStats,
+        userId: insertStats.userId,
+        totalPayments: insertStats.totalPayments?.toString() ?? existingStats.totalPayments,
+        activeQrCodes: typeof insertStats.activeQrCodes === 'number' ? insertStats.activeQrCodes : existingStats.activeQrCodes,
+        totalTransactions: typeof insertStats.totalTransactions === 'number' ? insertStats.totalTransactions : existingStats.totalTransactions,
+        uniquePayers: typeof insertStats.uniquePayers === 'number' ? insertStats.uniquePayers : existingStats.uniquePayers,
         lastUpdated: new Date() 
       };
       this.stats.set(existingStats.id, updatedStats);
       return updatedStats;
     } else {
-      // Create new stats
+      // Create new stats with proper type handling
       const id = this.statsIdCounter++;
       const now = new Date();
-      const newStats: Stats = { ...insertStats, id, lastUpdated: now };
+      const newStats: Stats = { 
+        id,
+        userId: insertStats.userId,
+        totalPayments: insertStats.totalPayments?.toString() ?? "0",
+        activeQrCodes: typeof insertStats.activeQrCodes === 'number' ? insertStats.activeQrCodes : 0,
+        totalTransactions: typeof insertStats.totalTransactions === 'number' ? insertStats.totalTransactions : 0,
+        uniquePayers: typeof insertStats.uniquePayers === 'number' ? insertStats.uniquePayers : 0,
+        lastUpdated: now 
+      };
       this.stats.set(id, newStats);
       return newStats;
     }

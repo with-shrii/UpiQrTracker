@@ -1,6 +1,7 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { pgStorage } from "./pg-storage";
 import { qrCodeService } from "./qr-service";
 import { 
   insertQrCodeSchema, 
@@ -9,8 +10,14 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { authService } from "./auth-service";
+import { authenticate, optionalAuthenticate } from "./auth-middleware";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication
+  setupAuth(app);
+  
   // API prefix
   const API_PREFIX = "/api";
 
@@ -27,6 +34,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // API endpoints
+  
+  // Auth routes
+  app.post(`${API_PREFIX}/register`, async (req: Request, res: Response) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      const user = await authService.register(userData);
+      
+      // Create initial stats for the user
+      await pgStorage.createOrUpdateStats({
+        userId: user.id,
+        totalPayments: "0",
+        activeQrCodes: 0,
+        totalTransactions: 0,
+        uniquePayers: 0
+      });
+      
+      return res.status(201).json({ user });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  app.post(`${API_PREFIX}/login`, async (req: Request, res: Response) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+      }
+      
+      const { user, token } = await authService.login(username, password);
+      return res.status(200).json({ user, token });
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Invalid credentials') {
+        return res.status(401).json({ error: 'Invalid username or password' });
+      }
+      handleError(res, error);
+    }
+  });
+  
+  app.get(`${API_PREFIX}/user`, authenticate, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const user = await authService.getUserById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Don't return password in response
+      const { password, ...userWithoutPassword } = user;
+      
+      return res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  app.post(`${API_PREFIX}/logout`, (req: Request, res: Response) => {
+    // Since we're using JWT, there's no server-side logout
+    // Just return success and the client will remove the token
+    return res.status(200).json({ message: 'Logged out successfully' });
+  });
   
   // User routes
   app.post(`${API_PREFIX}/users`, async (req: Request, res: Response) => {

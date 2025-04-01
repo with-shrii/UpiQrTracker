@@ -8,31 +8,75 @@ import Transactions from "@/pages/transactions";
 import QrCodes from "@/pages/qr-codes";
 import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
+import AuthPage from "@/pages/auth-page";
 import { Sidebar } from "@/components/layout/sidebar";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
+
+// Layout component for protected routes
+const DashboardLayout = ({ children }: { children: React.ReactNode }) => (
+  <div className="flex flex-col md:flex-row min-h-screen bg-background">
+    <Sidebar />
+    <main className="flex-1">{children}</main>
+  </div>
+);
 
 function Router() {
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1">
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/qr-codes" component={QrCodes} />
-          <Route path="/transactions" component={Transactions} />
-          <Route path="/profile" component={Profile} />
-          <Route path="/settings" component={Settings} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-    </div>
+    <Switch>
+      <ProtectedRoute 
+        path="/" 
+        component={() => (
+          <DashboardLayout>
+            <Dashboard />
+          </DashboardLayout>
+        )} 
+      />
+      <ProtectedRoute 
+        path="/qr-codes" 
+        component={() => (
+          <DashboardLayout>
+            <QrCodes />
+          </DashboardLayout>
+        )} 
+      />
+      <ProtectedRoute 
+        path="/transactions" 
+        component={() => (
+          <DashboardLayout>
+            <Transactions />
+          </DashboardLayout>
+        )} 
+      />
+      <ProtectedRoute 
+        path="/profile" 
+        component={() => (
+          <DashboardLayout>
+            <Profile />
+          </DashboardLayout>
+        )} 
+      />
+      <ProtectedRoute 
+        path="/settings" 
+        component={() => (
+          <DashboardLayout>
+            <Settings />
+          </DashboardLayout>
+        )} 
+      />
+      <Route path="/auth" component={AuthPage} />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <AuthProvider>
+        <Router />
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
