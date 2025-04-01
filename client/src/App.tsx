@@ -1,37 +1,27 @@
-import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
-import Transactions from "@/pages/transactions";
-import QrCodes from "@/pages/qr-codes";
-import Profile from "@/pages/profile";
-import Settings from "@/pages/settings";
-import { Sidebar } from "@/components/layout/sidebar";
-
-function Router() {
-  return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1">
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/qr-codes" component={QrCodes} />
-          <Route path="/transactions" component={Transactions} />
-          <Route path="/profile" component={Profile} />
-          <Route path="/settings" component={Settings} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-    </div>
-  );
-}
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-8">
+        <h1 className="text-4xl font-bold mb-8 text-primary">UPI QR Tracker</h1>
+        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
+          <h2 className="text-2xl font-bold mb-4">Welcome to the UPI QR Code Tracker</h2>
+          <p className="mb-4">
+            This application helps you generate and track UPI QR codes for payments.
+          </p>
+          <div className="flex justify-center">
+            <button 
+              className="px-4 py-2 bg-primary text-white rounded hover:bg-opacity-90"
+              onClick={() => alert('Feature will be available soon!')}
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
+      </div>
       <Toaster />
     </QueryClientProvider>
   );
