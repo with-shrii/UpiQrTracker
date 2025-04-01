@@ -57,23 +57,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // QR Code routes
   app.post(`${API_PREFIX}/qr-codes`, async (req: Request, res: Response) => {
     try {
-      const qrCodeData = insertQrCodeSchema.parse(req.body);
+      // First generate the QR code
+      const qrRequestData = req.body;
       
       // Generate QR code
       const generatedQR = await qrCodeService.generateQRCode({
-        upiId: qrCodeData.upiId,
-        name: qrCodeData.name,
-        amount: qrCodeData.amount ? qrCodeData.amount.toString() : undefined,
-        description: qrCodeData.description || "",
-        size: qrCodeData.size,
-        borderStyle: qrCodeData.borderStyle
+        upiId: qrRequestData.upiId,
+        name: qrRequestData.name,
+        amount: qrRequestData.amount || '',
+        description: qrRequestData.description || "",
+        size: qrRequestData.size,
+        borderStyle: qrRequestData.borderStyle
       });
       
-      // Save QR code to storage
-      const qrCode = await storage.createQrCode({
-        ...qrCodeData,
+      // Then add the qrData to the payload before validation
+      const fullQrCodeData = {
+        ...qrRequestData,
         qrData: generatedQR.data
-      });
+      };
+      
+      // Validate the complete data
+      const validatedData = insertQrCodeSchema.parse(fullQrCodeData);
+      
+      // Save QR code to storage
+      const qrCode = await storage.createQrCode(validatedData);
       
       return res.status(201).json(qrCode);
     } catch (error) {

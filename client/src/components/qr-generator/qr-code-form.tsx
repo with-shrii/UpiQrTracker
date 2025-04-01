@@ -62,7 +62,8 @@ export function QrCodeForm({ userId }: QrCodeFormProps) {
       const payload = {
         ...data,
         userId,
-        amount: data.amount ? Number(data.amount) : null,
+        // Keep amount as string to match schema expectations
+        amount: data.amount || '',
       };
       
       const response = await apiRequest('POST', '/api/qr-codes', payload);
