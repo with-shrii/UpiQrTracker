@@ -1,8 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { eq } from 'drizzle-orm';
-import { db } from './db';
-import { users, InsertUser, User } from '@shared/schema';
+import { InsertUser, User } from '@shared/schema';
+import { storage } from './storage';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
 
@@ -20,8 +19,8 @@ export class AuthService {
         password: hashedPassword
       };
       
-      // Insert into database
-      const [user] = await db.insert(users).values(newUser).returning();
+      // Insert into in-memory storage
+      const user = await storage.createUser(newUser);
       return user;
     } catch (error) {
       console.error('Registration error:', error);
@@ -33,9 +32,7 @@ export class AuthService {
   async login(username: string, password: string): Promise<{ user: User; token: string }> {
     try {
       // Find user by username
-      const user = await db.query.users.findFirst({
-        where: eq(users.username, username)
-      });
+      const user = await storage.getUserByUsername(username);
       
       if (!user) {
         throw new Error('Invalid credentials');
@@ -83,9 +80,7 @@ export class AuthService {
   // Get user by ID
   async getUserById(id: number): Promise<User | undefined> {
     try {
-      const user = await db.query.users.findFirst({
-        where: eq(users.id, id)
-      });
+      const user = await storage.getUser(id);
       return user;
     } catch (error) {
       console.error('Get user error:', error);

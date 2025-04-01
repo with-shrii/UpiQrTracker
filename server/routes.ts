@@ -1,7 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { pgStorage } from "./pg-storage";
 import { qrCodeService } from "./qr-service";
 import { 
   insertQrCodeSchema, 
@@ -42,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await authService.register(userData);
       
       // Create initial stats for the user
-      await pgStorage.createOrUpdateStats({
+      await storage.createOrUpdateStats({
         userId: user.id,
         totalPayments: "0",
         activeQrCodes: 0,
