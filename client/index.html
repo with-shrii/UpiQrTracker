@@ -6,72 +6,9 @@
     <title>UPI QR Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <meta name="description" content="Generate and track UPI QR codes for payments">
-    <style>
-      body {
-        font-family: 'Poppins', Arial, sans-serif;
-        max-width: 800px;
-        margin: 50px auto;
-        padding: 20px;
-        background-color: #f5f5f5;
-        text-align: center;
-      }
-      h1 {
-        color: #6C63FF;
-      }
-      .card {
-        background: white;
-        border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      }
-      button {
-        background-color: #6C63FF;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-      }
-      button:hover {
-        background-color: #5a52cc;
-      }
-      #status {
-        margin-top: 20px;
-        font-weight: bold;
-      }
-    </style>
   </head>
   <body>
-    <h1>UPI QR Code Generator & Tracker</h1>
-    <div class="card">
-      <h2>Welcome to our service!</h2>
-      <p>Generate custom UPI QR codes and track all transactions in one place.</p>
-      <button id="checkHealth">Check Server Health</button>
-      <div id="status"></div>
-    </div>
-
-    <script>
-      document.getElementById('checkHealth').addEventListener('click', async () => {
-        const statusDiv = document.getElementById('status');
-        statusDiv.textContent = 'Checking server health...';
-        
-        try {
-          const response = await fetch('/health');
-          if (response.ok) {
-            const text = await response.text();
-            statusDiv.textContent = `Server Response: ${text}`;
-            statusDiv.style.color = 'green';
-          } else {
-            statusDiv.textContent = `Error: Server responded with status ${response.status}`;
-            statusDiv.style.color = 'red';
-          }
-        } catch (error) {
-          statusDiv.textContent = `Error: ${error.message}`;
-          statusDiv.style.color = 'red';
-        }
-      });
-    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

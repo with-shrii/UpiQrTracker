@@ -14,11 +14,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API prefix
   const API_PREFIX = "/api";
 
-  // Health check route
-  app.get('/health', (req: Request, res: Response) => {
-    res.status(200).send('Server is healthy!');
-  });
-
   // Error handling middleware
   function handleError(res: Response, error: unknown) {
     console.error(error);
