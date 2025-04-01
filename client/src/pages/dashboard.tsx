@@ -63,7 +63,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard 
           title="Total Payments" 
-          value={isLoading ? "Loading..." : `₹${formatCurrency(stats?.totalPayments || 0)}`}
+          value={isLoading ? "Loading..." : formatCurrency(stats?.totalPayments || 0)}
           icon={<CircleDollarSign />}
           iconBgColor="bg-primary/10"
           iconColor="text-primary"
