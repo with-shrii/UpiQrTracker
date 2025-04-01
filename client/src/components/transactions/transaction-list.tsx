@@ -16,14 +16,17 @@ export function TransactionList({ userId }: TransactionListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterOption>('all');
 
-  // Fetch transactions
-  const { data: transactions, isLoading: transactionsLoading } = useQuery({
+  // Fetch transactions with refetch interval for real-time updates
+  const { data: transactions, isLoading: transactionsLoading } = useQuery<Transaction[]>({
     queryKey: [`/api/users/${userId}/transactions`],
+    refetchInterval: 5000, // Refetch every 5 seconds to keep transactions up to date
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 
   // Fetch QR codes for cross-referencing
-  const { data: qrCodes, isLoading: qrCodesLoading } = useQuery({
+  const { data: qrCodes, isLoading: qrCodesLoading } = useQuery<QrCode[]>({
     queryKey: [`/api/users/${userId}/qr-codes`],
+    refetchOnWindowFocus: true,
   });
 
   // Get QR code name by ID

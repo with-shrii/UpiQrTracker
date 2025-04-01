@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/qr-utils';
+import { Stats } from '@shared/schema';
 
 // Default user ID for demo purposes
 const DEFAULT_USER_ID = 1;
@@ -34,9 +35,11 @@ export default function Dashboard() {
     }
   });
 
-  // Fetch stats data
-  const { data: stats, isLoading } = useQuery({
+  // Fetch stats data with real-time updates
+  const { data: stats, isLoading } = useQuery<Stats>({
     queryKey: [`/api/users/${DEFAULT_USER_ID}/stats`],
+    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchOnWindowFocus: true,
   });
 
   // Load demo data if not already loaded
