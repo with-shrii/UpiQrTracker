@@ -47,12 +47,6 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Add restart endpoint
-  app.post('/api/_restart', (_req, res) => {
-    res.json({ status: 'restarting' });
-    process.exit(0); // This will trigger the server to restart
-  });
-
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
